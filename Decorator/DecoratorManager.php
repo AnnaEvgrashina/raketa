@@ -7,33 +7,25 @@ use Exception;
 use Psr\Cache\CacheItemPoolInterface;
 use Psr\Log\LoggerInterface;
 use src\Integration\DataProvider;
+use src\Models\DataProviderConfig;
 
 class DecoratorManager extends DataProvider
 {
-    public $cache;
-    public $logger;
-
-    /**
-     * @param string $host
-     * @param string $user
-     * @param string $password
-     * @param CacheItemPoolInterface $cache
-     */
-    public function __construct($host, $user, $password, CacheItemPoolInterface $cache)
+    public function __construct(
+        protected DataProviderConfig  $config,
+        public CacheItemPoolInterface $cache,
+        public LoggerInterface        $logger
+    )
     {
-        parent::__construct($host, $user, $password);
-        $this->cache = $cache;
-    }
-
-    public function setLogger(LoggerInterface $logger)
-    {
-        $this->logger = $logger;
     }
 
     /**
-     * {@inheritdoc}
+     * Get response
+     *
+     * @param array $input
+     * @return array
      */
-    public function getResponse(array $input)
+    public function getResponse(array $input): array
     {
         try {
             $cacheKey = $this->getCacheKey($input);
@@ -42,7 +34,7 @@ class DecoratorManager extends DataProvider
                 return $cacheItem->get();
             }
 
-            $result = parent::get($input);
+            $result = $this->getFromExternalService($input);
 
             $cacheItem
                 ->set($result)
@@ -50,15 +42,20 @@ class DecoratorManager extends DataProvider
                     (new DateTime())->modify('+1 day')
                 );
 
-            return $result;
         } catch (Exception $e) {
             $this->logger->critical('Error');
         }
 
-        return [];
+        return $result ?? [];
     }
 
-    public function getCacheKey(array $input)
+    /**
+     * Get cache key
+     *
+     * @param array $input
+     * @return false|string
+     */
+    public function getCacheKey(array $input): false|string
     {
         return json_encode($input);
     }

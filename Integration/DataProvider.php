@@ -2,30 +2,23 @@
 
 namespace src\Integration;
 
+use src\Models\DataProviderConfig;
+
 class DataProvider
 {
-    private $host;
-    private $user;
-    private $password;
-
-    /**
-     * @param $host
-     * @param $user
-     * @param $password
-     */
-    public function __construct($host, $user, $password)
+    public function __construct(
+        protected DataProviderConfig $config
+    )
     {
-        $this->host = $host;
-        $this->user = $user;
-        $this->password = $password;
     }
 
     /**
-     * @param array $request
+     * Get response from external service
      *
+     * @param array $request
      * @return array
      */
-    public function get(array $request)
+    public function getFromExternalService(array $request): array
     {
         // returns a response from external service
     }
